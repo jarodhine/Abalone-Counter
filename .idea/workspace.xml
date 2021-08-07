@@ -2,31 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e9302cde-1438-4092-aab4-0bde99909c7f" name="Changes" comment="Changes">
-      <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Counter.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/100.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/14.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/19.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/20.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/31.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/36.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/46.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/5.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/55.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/60.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/65.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/75.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/79.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/81.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/87.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/9.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/95.JPG" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TestImages/coco.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/model.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
