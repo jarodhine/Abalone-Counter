@@ -4,67 +4,91 @@ import numpy as np
 import cv2
 import torch
 import torchvision  # Used by loaded model
-import matplotlib.pyplot as plt
 
 from typing import Tuple, Dict
 from PIL import Image
+from pathlib import Path
 
-plt.rcParams['interactive'] == True  # Use to display images
-
-detection_threshold = 0.905
-input_image_path = ""
-result_boxes = []
+detection_threshold = 0.90
+total_count = 0
 
 
-# Load image from file path and convert to Tuple
-def get_input_image(image_path):
+def load_directory(image_directory_path):
+    image_paths = []
+    temp_images_arrays = []
+    temp_input_tensors = []
+
+    # Get file paths
+    for x in Path(image_directory_path).rglob('*.jpg'):
+        image_paths.append(x)
+    for x in Path(image_directory_path).rglob('*.png'):
+        image_paths.append(x)
+    for x in Path(image_directory_path).rglob('*.bmp'):
+        image_paths.append(x)
+
+    # Load images
+    for image in image_paths:
+        x, y = load_image(image)
+        temp_images_arrays.append(x)
+        temp_input_tensors.append(y)
+
+    return temp_images_arrays, temp_input_tensors
+
+
+def load_image(image_path):
     # Load
     image = Image.open(image_path)
 
     # Transforms
-    image_resized = image.resize((1333, 1333))
-    im_array = np.array(image_resized)
-    transposed_image_array = np.transpose(im_array, [2, 0, 1])
+    image_resized = image.resize((800, 800))
+    temp_image_array = np.array(image_resized)
+    transposed_image_array = np.transpose(temp_image_array, [2, 0, 1])
 
     # Convert to Tuple
     dic: Dict[str, torch.Tensor] = ({"image": torch.Tensor(transposed_image_array)})
-    input_image: Tuple[Dict[str, torch.Tensor]] = (dic,)
+    temp_input_tensor: Tuple[Dict[str, torch.Tensor]] = (dic,)
 
-    return input_image
+    return temp_image_array, temp_input_tensor
 
 
-def get_count(model_output):
-    count = 0
+def run_inference(model, loaded_image):
+    print("Processing...")
 
-    for x in model_output[0]['scores']:
-        if x >= detection_threshold:
-            count = count + 1
+    # Run inference on image
+    output = model(loaded_image)
 
-    return count
+    # Parse results
+    temp_boxes = get_boxes(output)
+
+    # Draw predictions on image
+    # display_boxes_on_image(image_path=input_image_path, bounding_boxes=output_boxes)
+
+    # Display count
+    # print("Predicted Count: " + str(get_count(output_boxes)))
+
+    return temp_boxes
 
 
 def get_boxes(model_output):
     model_output = model_output[0]
-    boxes = []
+    temp_boxes = []
 
     pred_boxes = model_output['pred_boxes']
     scores = model_output['scores']
 
     for x in range(0, len(pred_boxes)):
         if scores[x] >= detection_threshold:
-            boxes.append(pred_boxes[x])
+            temp_boxes.append(pred_boxes[x])
 
-    return boxes
+    return temp_boxes
 
 
-def display_boxes_on_image(image_path, bounding_boxes):
-    # Load
-    image = Image.open(image_path)
+def get_count(result_boxes):
+    return len(result_boxes)
 
-    # Transforms
-    image_resized = image.resize((1333, 1333))
-    im_array = np.array(image_resized)
-    image_bgr = cv2.cvtColor(im_array, cv2.COLOR_RGB2BGR)
+
+def display_boxes_on_image(image, bounding_boxes):
+    image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
     for x in range(0, len(bounding_boxes)):
         start_point = (int(bounding_boxes[x][0]), int(bounding_boxes[x][1]))
@@ -78,30 +102,29 @@ def display_boxes_on_image(image_path, bounding_boxes):
     cv2.destroyAllWindows()
 
 
-
-def inference():
-    # Load Model
-    loaded_model = torch.jit.load('model.ts')
-
-    # Run inference on image
-    output = loaded_model(get_input_image(input_image_path))
-
-    # Parse results
-    bounding_boxes = get_boxes(output)
-
-    # Draw predictions on image
-    display_boxes_on_image(image_path=input_image_path, bounding_boxes=bounding_boxes)
-
-    # Display count
-    print("Predicted Count: " + str(get_count(output)))
-
-
 if __name__ == '__main__':
     warnings.filterwarnings("ignore", category=UserWarning)  # Disable Deprecation Warnings
 
     try:
         input_image_path = str(sys.argv[1])
-    except:
-        input_image_path = "TestImages/5.JPG"
+    except IndexError:
+        input_image_path = "TestImages/"
 
-    inference()
+    # Load images
+    images, input_tuples = load_directory(input_image_path)
+
+    # Load Model
+    loaded_model = torch.jit.load('model.ts')
+
+    detections = []
+
+    for i in input_tuples:
+        boxes = run_inference(loaded_model, i)
+        total_count += get_count(boxes)
+        detections.append(boxes)
+
+    print("Predicted Total: " + str(total_count))
+    print("Average per Image: " + str(total_count / len(input_tuples)))
+
+    # Display First Detection Result
+    display_boxes_on_image(images[0], detections[0])
