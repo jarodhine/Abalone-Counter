@@ -9,7 +9,8 @@ from typing import Tuple, Dict
 from PIL import Image
 from pathlib import Path
 
-detection_threshold = 0.90
+DETECTION_THRESHOLD = 0.90
+MAX_SIZE = 800
 total_count = 0
 
 
@@ -40,7 +41,8 @@ def load_image(image_path):
     image = Image.open(image_path)
 
     # Transforms
-    image_resized = image.resize((800, 800))
+    # image_resized = image.resize((800, 800))
+    image_resized = resize_image(image)
     temp_image_array = np.array(image_resized)
     transposed_image_array = np.transpose(temp_image_array, [2, 0, 1])
 
@@ -49,6 +51,22 @@ def load_image(image_path):
     temp_input_tensor: Tuple[Dict[str, torch.Tensor]] = (dic,)
 
     return temp_image_array, temp_input_tensor
+
+
+def resize_image(image):
+    w, h = image.size
+
+    longest_edge = 1
+    if w > h:
+        longest_edge = w
+    else:
+        longest_edge = h
+
+    ratio = MAX_SIZE / longest_edge
+
+    image_resized = image.resize((int(ratio * w), int(ratio * h)))
+
+    return image_resized
 
 
 def run_inference(model, loaded_image):
@@ -77,7 +95,7 @@ def get_boxes(model_output):
     scores = model_output['scores']
 
     for x in range(0, len(pred_boxes)):
-        if scores[x] >= detection_threshold:
+        if scores[x] >= DETECTION_THRESHOLD:
             temp_boxes.append(pred_boxes[x])
 
     return temp_boxes
@@ -96,7 +114,7 @@ def display_boxes_on_image(image, bounding_boxes):
         cv2.rectangle(image_bgr, start_point, end_point, (0, 0, 0), 2)
 
     cv2.namedWindow('Detection Results', cv2.WINDOW_NORMAL)
-    cv2.resizeWindow('Detection Results', 600, 600)
+    cv2.resizeWindow('Detection Results', 800, 600)
     cv2.imshow('Detection Results', image_bgr)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
