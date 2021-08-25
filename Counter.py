@@ -140,7 +140,8 @@ def run_inference():
     label_info_status.config(text="Complete")
 
     label_info_total_display.config(text=str(total_count))
-    label_info_average_display.config(text=str(total_count / len(input_tuples)))
+    avg = total_count / len(input_tuples)
+    label_info_average_display.config(text=str('%.2f' % avg))
 
 
 def reset():
