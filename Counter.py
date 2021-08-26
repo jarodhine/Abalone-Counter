@@ -8,19 +8,24 @@ import tkinter.filedialog
 
 from typing import Tuple, Dict
 from PIL import Image
+from PIL import ImageTk
 from pathlib import Path
 
 DETECTION_THRESHOLD = 0.90
-MAX_SIZE = 800
+MAX_SIZE = 200
 
 images = []
 input_tuples = []
 total_count = 0
 detections = []
+current_image = 0
+current_image_bitmap = []
+image_paths = []
+image_list = []
 
 
 def load_directory_images(image_directory_path):
-    image_paths = []
+    global image_paths
     temp_images_arrays = []
     temp_input_tensors = []
 
@@ -42,6 +47,8 @@ def load_directory_images(image_directory_path):
 
 
 def load_image(image_path):
+    loaded_images.insert(tkinter.END, str(image_path))
+
     # Load
     image = Image.open(image_path)
 
@@ -54,6 +61,10 @@ def load_image(image_path):
     # Convert to Tuple
     dic: Dict[str, torch.Tensor] = ({"image": torch.Tensor(transposed_image_array)})
     temp_input_tensor: Tuple[Dict[str, torch.Tensor]] = (dic,)
+
+    global image_list
+    python_image = ImageTk.PhotoImage(image_resized)
+    image_list.append(python_image)
 
     return temp_image_array, temp_input_tensor
 
@@ -74,7 +85,6 @@ def resize_image(image):
 
 
 def run_inference_on_image(model, loaded_image):
-
     # Run inference on image
     output = model(loaded_image)
 
@@ -147,13 +157,23 @@ def run_inference():
 def reset():
     global images
     global input_tuples
+    global total_count
     global detections
+    global current_image
+    global current_image_bitmap
+    global image_paths
+    global image_list
 
     images = []
     input_tuples = []
+    total_count = 0
     detections = []
+    current_image = 0
+    current_image_bitmap = []
+    image_paths = []
+    image_list = []
 
-    print("Reset")
+    label_info_status.config(text="Reset")
 
 
 if __name__ == '__main__':
@@ -167,28 +187,32 @@ if __name__ == '__main__':
     root.title("Abalone Counter")
     root.geometry("800x600")
 
-    frame_menu = tkinter.Frame(master=root, bg="red")
-    frame_info = tkinter.Frame(master=root, bg="green")
-    frame_image = tkinter.Frame(master=root, bg="blue")
+    frame_menu = tkinter.Frame(master=root)
+    frame_info = tkinter.Frame(master=root, bd=2, relief=tkinter.RIDGE)
+    frame_image = tkinter.Frame(master=root, bd=2, relief=tkinter.RIDGE)
+
+    frame_menu.grid_propagate(True)
+    frame_info.grid_propagate(True)
+    frame_image.grid_propagate(True)
 
     # Configure frame sizing
-    tkinter.Grid.rowconfigure(root, index=0, weight=1)
+    tkinter.Grid.rowconfigure(root, index=0, weight=2)
     tkinter.Grid.columnconfigure(root, index=0, weight=1)
 
     tkinter.Grid.rowconfigure(root, index=1, weight=4)
     tkinter.Grid.columnconfigure(root, index=0, weight=4)
 
-    tkinter.Grid.rowconfigure(root, index=1, weight=16)
-    tkinter.Grid.columnconfigure(root, index=1, weight=16)
+    tkinter.Grid.rowconfigure(root, index=1, weight=12)
+    tkinter.Grid.columnconfigure(root, index=1, weight=12)
 
-    frame_menu.grid(row=0, column=0, columnspan=2, sticky="nsew")
+    frame_menu.grid(row=0, column=0, columnspan=2)
     frame_info.grid(row=1, column=0, sticky="nsew")
     frame_image.grid(row=1, column=1, sticky="nsew")
 
     # Menu
-    button_load = tkinter.Button(master=frame_menu, text="Load Images", width=8, command=load_directory)
-    button_detect = tkinter.Button(master=frame_menu, text="Detect Abalone", width=8, command=run_inference)
-    button_reset = tkinter.Button(master=frame_menu, text="Reset Program", width=8)
+    button_load = tkinter.Button(master=frame_menu, text="Load Images", width=16, command=load_directory)
+    button_detect = tkinter.Button(master=frame_menu, text="Detect Abalone", width=16, command=run_inference)
+    button_reset = tkinter.Button(master=frame_menu, text="Reset Program", width=16, command=reset)
 
     tkinter.Grid.rowconfigure(frame_menu, index=0, weight=1)
     tkinter.Grid.columnconfigure(frame_menu, index=0, weight=2)
@@ -226,18 +250,20 @@ if __name__ == '__main__':
     label_info_status.grid(row=4, column=0, columnspan=2, sticky="sew")
 
     # Image
-    button_previous = tkinter.Button(master=frame_image, text="Previous", width=8)
-    button_next = tkinter.Button(master=frame_image, text="Next", width=8)
-    label_current_image = tkinter.Label(master=frame_image, text="TODO: Test Image")
+    scrollbar = tkinter.Scrollbar(master=frame_image, orient=tkinter.VERTICAL)
+    loaded_images = tkinter.Listbox(master=frame_image, yscrollcommand=scrollbar.set)
 
-    tkinter.Grid.rowconfigure(frame_info, index=0, weight=1)
-    tkinter.Grid.columnconfigure(frame_image, index=0, weight=2)
-    tkinter.Grid.columnconfigure(frame_image, index=1, weight=3)
-    tkinter.Grid.columnconfigure(frame_image, index=2, weight=3)
-    tkinter.Grid.columnconfigure(frame_image, index=3, weight=2)
+    scrollbar.config(command=loaded_images.yview)
 
-    button_previous.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
-    button_next.grid(row=0, column=2, sticky="nsew", padx=20, pady=20)
-    label_current_image.grid(row=1, column=1, columnspan=2, sticky="nsew", pady=30)
+    tkinter.Grid.rowconfigure(frame_image, index=0, weight=1)
+    tkinter.Grid.rowconfigure(frame_image, index=1, weight=10)
+    tkinter.Grid.rowconfigure(frame_image, index=2, weight=1)
+
+    tkinter.Grid.columnconfigure(frame_image, index=0, weight=1)
+    tkinter.Grid.columnconfigure(frame_image, index=1, weight=10)
+    tkinter.Grid.columnconfigure(frame_image, index=2, weight=1)
+
+    scrollbar.grid(row=0, column=2, rowspan=3, sticky="ns")
+    loaded_images.grid(row=1, column=1, sticky="nsew")
 
     root.mainloop()
