@@ -5,6 +5,7 @@ import torch
 import torchvision  # Used by loaded model
 import tkinter
 import tkinter.filedialog
+import statistics
 
 from typing import Tuple, Dict
 from PIL import Image
@@ -12,11 +13,12 @@ from PIL import ImageTk
 from pathlib import Path
 
 DETECTION_THRESHOLD = 0.90
-MAX_SIZE = 200
+MAX_SIZE = 800
 
 images = []
 input_tuples = []
 total_count = 0
+counts = []
 detections = []
 current_image = 0
 current_image_bitmap = []
@@ -53,7 +55,6 @@ def load_image(image_path):
     image = Image.open(image_path)
 
     # Transforms
-    # image_resized = image.resize((800, 800))
     image_resized = resize_image(image)
     temp_image_array = np.array(image_resized)
     transposed_image_array = np.transpose(temp_image_array, [2, 0, 1])
@@ -141,23 +142,33 @@ def run_inference():
     global images
     global input_tuples
     global total_count
+    global counts
 
     for i in input_tuples:
         boxes = run_inference_on_image(loaded_model, i)
+        counts.append(get_count(boxes))
         total_count += get_count(boxes)
         detections.append(boxes)
 
     label_info_status.config(text="Complete")
 
     label_info_total_display.config(text=str(total_count))
-    avg = total_count / len(input_tuples)
-    label_info_average_display.config(text=str('%.2f' % avg))
+
+    mean = statistics.mean(counts)
+    label_info_mean_display.config(text=str('%.2f' % mean))
+
+    median = statistics.median(counts)
+    label_info_median_display.config(text=str('%.2f' % median))
+
+    mode = statistics.mode(counts)
+    label_info_mode_display.config(text=str('%.2f' % mode))
 
 
 def reset():
     global images
     global input_tuples
     global total_count
+    global counts
     global detections
     global current_image
     global current_image_bitmap
@@ -167,6 +178,7 @@ def reset():
     images = []
     input_tuples = []
     total_count = 0
+    counts = []
     detections = []
     current_image = 0
     current_image_bitmap = []
@@ -174,6 +186,21 @@ def reset():
     image_list = []
 
     label_info_status.config(text="Reset")
+
+
+def view_detection(x):
+    selection = loaded_images.curselection()
+
+    i = images[selection[0]]
+    b = 0
+
+    try:
+        b = detections[selection[0]]
+    except IndexError:
+        print("No detections!")
+
+    if b != 0:
+        display_boxes_on_image(i, b)
 
 
 if __name__ == '__main__':
@@ -228,30 +255,44 @@ if __name__ == '__main__':
     # Information
     label_info_title = tkinter.Label(master=frame_info, text="Information")
     label_info_total = tkinter.Label(master=frame_info, text="Total: ")
-    label_info_average = tkinter.Label(master=frame_info, text="Average: ")
+    label_info_mean = tkinter.Label(master=frame_info, text="Mean: ")
+    label_info_median = tkinter.Label(master=frame_info, text="Median: ")
+    label_info_mode = tkinter.Label(master=frame_info, text="Mode: ")
+
     label_info_total_display = tkinter.Label(master=frame_info, text="0")
-    label_info_average_display = tkinter.Label(master=frame_info, text="0")
+    label_info_mean_display = tkinter.Label(master=frame_info, text="0")
+    label_info_median_display = tkinter.Label(master=frame_info, text="0")
+    label_info_mode_display = tkinter.Label(master=frame_info, text="0")
     label_info_status = tkinter.Label(master=frame_info, text="Ready")
 
     tkinter.Grid.rowconfigure(frame_info, index=0, weight=0)
     tkinter.Grid.rowconfigure(frame_info, index=1, weight=0)
     tkinter.Grid.rowconfigure(frame_info, index=2, weight=0)
-    tkinter.Grid.rowconfigure(frame_info, index=3, weight=100)
+    tkinter.Grid.rowconfigure(frame_info, index=3, weight=0)
     tkinter.Grid.rowconfigure(frame_info, index=4, weight=0)
+    tkinter.Grid.rowconfigure(frame_info, index=5, weight=100)
+    tkinter.Grid.rowconfigure(frame_info, index=6, weight=0)
 
     tkinter.Grid.columnconfigure(frame_info, index=0, weight=1)
     tkinter.Grid.columnconfigure(frame_info, index=1, weight=1)
 
     label_info_title.grid(row=0, column=0, columnspan=2, sticky="new")
+
     label_info_total.grid(row=1, column=0, sticky="new")
-    label_info_average.grid(row=2, column=0, sticky="new")
+    label_info_mean.grid(row=2, column=0, sticky="new")
+    label_info_median.grid(row=3, column=0, sticky="new")
+    label_info_mode.grid(row=4, column=0, sticky="new")
+
     label_info_total_display.grid(row=1, column=1, sticky="new")
-    label_info_average_display.grid(row=2, column=1, sticky="new")
-    label_info_status.grid(row=4, column=0, columnspan=2, sticky="sew")
+    label_info_mean_display.grid(row=2, column=1, sticky="new")
+    label_info_median_display.grid(row=3, column=1, sticky="new")
+    label_info_mode_display.grid(row=4, column=1, sticky="new")
+
+    label_info_status.grid(row=6, column=0, columnspan=2, sticky="sew")
 
     # Image
     scrollbar = tkinter.Scrollbar(master=frame_image, orient=tkinter.VERTICAL)
-    loaded_images = tkinter.Listbox(master=frame_image, yscrollcommand=scrollbar.set)
+    loaded_images = tkinter.Listbox(master=frame_image, yscrollcommand=scrollbar.set, selectmode=tkinter.SINGLE)
 
     scrollbar.config(command=loaded_images.yview)
 
@@ -265,5 +306,7 @@ if __name__ == '__main__':
 
     scrollbar.grid(row=0, column=2, rowspan=3, sticky="ns")
     loaded_images.grid(row=1, column=1, sticky="nsew")
+
+    loaded_images.bind('<Double-1>', view_detection)
 
     root.mainloop()
